@@ -51,8 +51,18 @@ def extract_exceptions(route: APIRoute) -> List[HTTPException]:
     exceptions = []
     functions = []
     functions.append(getattr(route, "endpoint"))
+
+    # To prevent the method from entering an infinite loop
+    # we keep track of endpoints that were already explored
+    found_endpoints = set()
+
     while len(functions) > 0:
         endpoint = functions.pop()
+
+        if endpoint in found_endpoints:
+            continue
+        found_endpoints.add(endpoint)
+
         source = inspect.getsource(endpoint)
         tokens = tokenize.tokenize(BytesIO(source.encode("utf-8")).readline)
         _exceptions, _functions = exceptions_functions(endpoint, tokens)
